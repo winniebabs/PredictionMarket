@@ -69,3 +69,12 @@
         true)
       false)))
 
+(define-public (withdraw (market-id uint) (outcome uint))
+  (let ((bet (map-get? bets { market-id: market-id, bettor: tx-sender, outcome: outcome })))
+    (if bet
+      (begin
+        (map-delete bets { market-id: market-id, bettor: tx-sender, outcome: outcome })
+        (as-contract (stx-transfer? (get payout-amount bet) tx-sender))
+        true)
+      false)))
+
