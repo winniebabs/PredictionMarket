@@ -50,3 +50,22 @@
         true)
       false)))
 
+(define-public (resolve-market (market-id uint) (winning-outcome uint))
+  (let ((market (map-get? markets { market-id: market-id })))
+    (if (and market (< winning-outcome (get outcome-count market)) (not (get status market)))
+      (begin
+        (map-set markets { market-id: market-id }
+          (let ((updated-market (get market)))
+            (! true (update status updated-market))
+            updated-market))
+        (let ((total-bets (get total-bets market))
+              (winning-outcome-data (get-list-item (get outcomes market) winning-outcome))
+              (payout-rate (/ (* 10000 (get total-bets winning-outcome-data)) total-bets)))
+          (map-get-all bets { market-id: market-id }
+            (lambda (bet)
+              (let ((payout-amount (/ (* (get bet-amount bet) 10000) payout-rate)))
+                (map-set bets (get bet)
+                  (! payout-amount (update payout-amount bet)))))))
+        true)
+      false)))
+
