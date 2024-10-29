@@ -32,3 +32,21 @@
         status: false })
     market-id))
 
+(define-public (place-bet (market-id uint) (outcome uint) (bet-amount uint))
+  (let ((market (map-get? markets { market-id: market-id })))
+    (if (and market (< outcome (get outcome-count market)))
+      (begin
+        (map-insert bets { market-id: market-id, bettor: tx-sender, outcome: outcome }
+          { bet-amount: bet-amount, payout-amount: 0 })
+        (map-set markets { market-id: market-id }
+          (let ((updated-market (get market)))
+            (map-set (get outcomes updated-market) outcome
+              (let ((outcome-data (get-list-item (get outcomes updated-market) outcome)))
+                (! (+ (get total-bets updated-market) bet-amount)
+                   (update total-bets updated-market))
+                (! (+ (get total-bets outcome-data) bet-amount)
+                   (update total-bets outcome-data)))))
+            updated-market))
+        true)
+      false)))
+
